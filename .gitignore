@@ -1,2 +1,6 @@
 .env
 node_modules
+*.pkl
+*.db
+__pycache__/
+.venv
