@@ -4,6 +4,7 @@ node_modules
 *.db
 __pycache__/
 .venv
+venv312
 
 # Frontend logs
 logs

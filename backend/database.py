@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 from datetime import datetime
 import os
+import ssl
+import certifi
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +16,18 @@ db     = None
 def connect_db():
     global client, db
     try:
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+        client = MongoClient(
+            MONGO_URI,
+            serverSelectionTimeoutMS=5000,
+            tlsCAFile=certifi.where(),
+            tls=True,
+            tlsAllowInvalidCertificates=True,
+            tlsAllowInvalidHostnames=True,
+        )
         client.server_info()
         db = client[DB_NAME]
         print("✓ MongoDB connected")
@@ -28,17 +41,17 @@ def save_scan(job_data: dict, result: dict):
         return None
     try:
         record = {
-            "jobTitle":       job_data.get("jobTitle", ""),
-            "company":        job_data.get("company", ""),
-            "jobDescription": job_data.get("jobDescription", ""),
-            "riskScore":      result.get("riskScore"),
-            "verdict":        result.get("verdict"),
-            "confidence":     result.get("confidence"),
-            "redFlags":       result.get("redFlags", []),
-            "positiveSignals":result.get("positiveSignals", []),
-            "summary":        result.get("summary", ""),
-            "recommendations":result.get("recommendations", []),
-            "scannedAt":      datetime.utcnow(),
+            "jobTitle":        job_data.get("jobTitle", ""),
+            "company":         job_data.get("company", ""),
+            "jobDescription":  job_data.get("jobDescription", ""),
+            "riskScore":       result.get("riskScore"),
+            "verdict":         result.get("verdict"),
+            "confidence":      result.get("confidence"),
+            "redFlags":        result.get("redFlags", []),
+            "positiveSignals": result.get("positiveSignals", []),
+            "summary":         result.get("summary", ""),
+            "recommendations": result.get("recommendations", []),
+            "scannedAt":       datetime.utcnow(),
         }
         inserted = db.scans.insert_one(record)
         print(f"✓ Scan saved: {inserted.inserted_id}")
